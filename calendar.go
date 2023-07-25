@@ -3,7 +3,6 @@ package ics
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -456,10 +455,10 @@ func ParseCalendar(r io.Reader) (*Calendar, error) {
 		}
 		line, err := ParseProperty(*l)
 		if err != nil {
-			return nil, fmt.Errorf("%s %d: %w", ParsingLineError, ln, err)
+			return nil, fmt.Errorf("%w %d: %w", ErrParsingLine, ln, err)
 		}
 		if line == nil {
-			return nil, fmt.Errorf("%s %d", ParsingCalendarLineError, ln)
+			return nil, fmt.Errorf("%w %d", ErrParsingCalendarLine, ln)
 		}
 		switch state {
 		case "begin":
@@ -469,10 +468,10 @@ func ParseCalendar(r io.Reader) (*Calendar, error) {
 				case "VCALENDAR":
 					state = "properties"
 				default:
-					return nil, errors.New(MalformedCalendarExpectedVCalendarError)
+					return nil, ErrMalformedCalendarExpectedVCalendar
 				}
 			default:
-				return nil, errors.New(MalformedCalendarExpectedBeginError)
+				return nil, ErrMalformedCalendarExpectedBegin
 			}
 		case "properties":
 			switch line.IANAToken {
@@ -481,7 +480,7 @@ func ParseCalendar(r io.Reader) (*Calendar, error) {
 				case "VCALENDAR":
 					state = "end"
 				default:
-					return nil, errors.New(MalformedCalendarExpectedEndError)
+					return nil, ErrMalformedCalendarExpectedEnd
 				}
 			case "BEGIN":
 				state = "components"
@@ -499,23 +498,23 @@ func ParseCalendar(r io.Reader) (*Calendar, error) {
 				case "VCALENDAR":
 					state = "end"
 				default:
-					return nil, errors.New(MalformedCalendarExpectedEndError)
+					return nil, fmt.Errorf("%w at '%s': %w", ErrMalformedCalendarExpectedEnd, line.IANAToken, err)
 				}
 			case "BEGIN":
 				co, err := GeneralParseComponent(cs, line)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("%w at '%s': %w", ErrMalformedCalendarExpectedEnd, line.IANAToken, err)
 				}
 				if co != nil {
 					c.Components = append(c.Components, co)
 				}
 			default:
-				return nil, errors.New(MalformedCalendarExpectedBeginOrEndError)
+				return nil, fmt.Errorf("%w at '%s'", ErrMalformedCalendarExpectedBeginOrEnd, line.IANAToken)
 			}
 		case "end":
-			return nil, errors.New(MalformedCalendarUnexpectedEndError)
+			return nil, ErrMalformedCalendarUnexpectedEnd
 		default:
-			return nil, errors.New(MalformedCalendarBadStateError)
+			return nil, ErrMalformedCalendarBadState
 		}
 	}
 	return c, nil
@@ -559,7 +558,7 @@ func (cs *CalendarStream) ReadLine() (*ContentLine, error) {
 			if len(p) == 0 {
 				c = false
 			} else if p[0] == ' ' || p[0] == '\t' {
-				cs.b.Discard(1) // nolint:errcheck
+				_, _ = cs.b.Discard(1) // nolint:errcheck
 			} else {
 				c = false
 			}
@@ -574,12 +573,18 @@ func (cs *CalendarStream) ReadLine() (*ContentLine, error) {
 		case io.EOF:
 			c = false
 		default:
+			if err != nil {
+				err = fmt.Errorf("readline: %w", err)
+			}
 			return nil, err
 		}
 	}
 	if len(r) == 0 && err != nil {
-		return nil, err
+		return nil, fmt.Errorf("readline: %w", err)
 	}
 	cl := ContentLine(r)
+	if err != nil {
+		err = fmt.Errorf("readline: %w", err)
+	}
 	return &cl, err
 }

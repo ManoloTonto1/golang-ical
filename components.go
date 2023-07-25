@@ -3,7 +3,6 @@ package ics
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -156,19 +155,19 @@ func (event *VEvent) SetDuration(d time.Duration) error {
 			return nil
 		}
 	}
-	return errors.New(StartOrEndNotYetDefinedError)
+	return ErrStartOrEndNotYetDefined
 }
 
 func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllDay bool) (time.Time, error) {
 	timeProp := event.GetProperty(componentProperty)
 	if timeProp == nil {
-		return time.Time{}, errors.New(PropertyNotFoundError)
+		return time.Time{}, ErrPropertyNotFound
 	}
 
 	timeVal := timeProp.BaseProperty.Value
 	matched := timeStampVariations.FindStringSubmatch(timeVal)
 	if matched == nil {
-		return time.Time{}, fmt.Errorf("%s, got '%s'", TimeValueNotMatchedError, timeVal)
+		return time.Time{}, fmt.Errorf("%s, got '%s'", ErrTimeValueNotMatched, timeVal)
 	}
 	tOrZGrp := matched[2]
 	zGrp := matched[4]
@@ -179,7 +178,7 @@ func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllD
 	var propLoc *time.Location
 	if tzIdOk {
 		if len(tzId) != 1 {
-			return time.Time{}, errors.New(ExpectedOneTZIDError)
+			return time.Time{}, ErrExpectedOneTZID
 		}
 		var tzErr error
 		propLoc, tzErr = time.LoadLocation(tzId[0])
@@ -202,7 +201,7 @@ func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllD
 			}
 		}
 
-		return time.Time{}, fmt.Errorf("%s, got '%s'", TimeValueMatchedButUnsupportedAllDayTimeStampError, timeVal)
+		return time.Time{}, fmt.Errorf("%s, got '%s'", ErrTimeValueMatchedButUnsupportedAllDayTimeStamp, timeVal)
 	}
 
 	if grp1len > 0 && grp3len > 0 && tOrZGrp == "T" && zGrp == "Z" {
@@ -223,7 +222,7 @@ func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllD
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("%s, got '%s'", TimeValueMatchedButNotSupportedError, timeVal)
+	return time.Time{}, fmt.Errorf("%s, got '%s'", ErrTimeValueMatchedButNotSupported, timeVal)
 }
 
 func (event *VEvent) GetStartAt() (time.Time, error) {
@@ -519,7 +518,7 @@ func GeneralParseComponent(cs *CalendarStream, startLine *BaseProperty) (Compone
 	var co Component
 	switch startLine.Value {
 	case "VCALENDAR":
-		return nil, errors.New(MalformedCalendarVCalendarNotWhereExpectedError)
+		return nil, ErrMalformedCalendarVCalendarNotWhereExpected
 	case "VEVENT":
 		co = ParseVEvent(cs, startLine)
 	case "VTODO":
@@ -660,10 +659,10 @@ func ParseComponent(cs *CalendarStream, startLine *BaseProperty) (ComponentBase,
 		}
 		line, err := ParseProperty(*l)
 		if err != nil {
-			return cb, fmt.Errorf("%s %d: %w", ParsingComponentPropertyError, ln, err)
+			return cb, fmt.Errorf("%s %d: %w", ErrParsingComponentProperty, ln, err)
 		}
 		if line == nil {
-			return cb, errors.New(ParsingComponentLineError)
+			return cb, ErrParsingComponentLine
 		}
 		switch line.IANAToken {
 		case "END":
@@ -671,7 +670,7 @@ func ParseComponent(cs *CalendarStream, startLine *BaseProperty) (ComponentBase,
 			case startLine.Value:
 				return cb, nil
 			default:
-				return cb, errors.New(UnbalancedEndError)
+				return cb, ErrUnbalancedEnd
 			}
 		case "BEGIN":
 			co, err := GeneralParseComponent(cs, line)
@@ -685,5 +684,5 @@ func ParseComponent(cs *CalendarStream, startLine *BaseProperty) (ComponentBase,
 			cb.Properties = append(cb.Properties, IANAProperty{*line})
 		}
 	}
-	return cb, errors.New(OutOfLinesError)
+	return cb, ErrOutOfLines
 }
