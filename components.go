@@ -3,6 +3,7 @@ package ics
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -978,8 +979,8 @@ func ParseComponent(cs *CalendarStream, startLine *BaseProperty) (ComponentBase,
 	for ln := 0; cont; ln++ {
 		l, err := cs.ReadLine()
 		if err != nil {
-			switch err {
-			case io.EOF:
+			switch {
+			case errors.Is(err, io.EOF):
 				cont = false
 			default:
 				return cb, err

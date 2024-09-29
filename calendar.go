@@ -3,6 +3,7 @@ package ics
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -419,8 +420,8 @@ func ParseCalendar(r io.Reader) (*Calendar, error) {
 	for ln := 0; cont; ln++ {
 		l, err := cs.ReadLine()
 		if err != nil {
-			switch err {
-			case io.EOF:
+			switch {
+			case errors.Is(err, io.EOF):
 				cont = false
 			default:
 				return c, err
@@ -528,7 +529,7 @@ func (cs *CalendarStream) ReadLine() (*ContentLine, error) {
 			}
 			p, err := cs.b.Peek(1)
 			r = append(r, b[:len(b)-o]...)
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				c = false
 			}
 			if len(p) == 0 {
@@ -541,14 +542,15 @@ func (cs *CalendarStream) ReadLine() (*ContentLine, error) {
 		} else {
 			r = append(r, b...)
 		}
-		switch err {
-		case nil:
+		switch {
+		case err == nil:
 			if len(r) == 0 {
 				c = true
 			}
-		case io.EOF:
+		case errors.Is(err, io.EOF):
 			c = false
 		default:
+			// This must be as a result of boxing?
 			if err != nil {
 				err = fmt.Errorf("readline: %w", err)
 			}
