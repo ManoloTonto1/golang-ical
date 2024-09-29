@@ -176,7 +176,7 @@ func (event *VEvent) SetDuration(d time.Duration) error {
 func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllDay bool) (time.Time, error) {
 	timeProp := event.GetProperty(componentProperty)
 	if timeProp == nil {
-		return time.Time{}, fmt.Errorf("%w: %s", ErrorPropertyNotFound, componentProperty)
+		return time.Time{}, fmt.Errorf("%w: %s", ErrPropertyNotFound, componentProperty)
 	}
 
 	timeVal := timeProp.BaseProperty.Value

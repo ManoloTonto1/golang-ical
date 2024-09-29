@@ -6,9 +6,7 @@ import (
 )
 
 var (
-	// ErrorPropertyNotFound is the error returned if the requested valid
-	// property is not set.
-	ErrorPropertyNotFound = errors.New("property not found")
+	ErrUnexpectedParamValueLength = errors.New("unexpected end of param value")
 
 	ErrMalformedCalendar = errors.New("malformed calendar")
 
@@ -22,8 +20,10 @@ var (
 	ErrMalformedCalendarVCalendarNotWhereExpected = fmt.Errorf("%w: vcalendar not where expected", ErrMalformedCalendar)
 
 	ErrStartOrEndNotYetDefined = errors.New("start or end not yet defined")
-	ErrPropertyNotFound        = errors.New("property not found")
-	ErrExpectedOneTZID         = errors.New("expected one TZID")
+	// ErrPropertyNotFound is the error returned if the requested valid
+	// property is not set.
+	ErrPropertyNotFound = errors.New("property not found")
+	ErrExpectedOneTZID  = errors.New("expected one TZID")
 
 	ErrTimeValueNotMatched                           = errors.New("time value not matched")
 	ErrTimeValueMatchedButUnsupportedAllDayTimeStamp = errors.New("time value matched but unsupported all-day timestamp")

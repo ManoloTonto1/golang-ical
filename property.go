@@ -324,7 +324,7 @@ func parsePropertyParamValue(s string, p int) (string, int, error) {
 			return "", 0, fmt.Errorf("%s:%d in property param value", ErrUnexpectedASCIIChar, s[p])
 		case '\\':
 			if p+2 >= len(s) {
-				return "", 0, errors.New("unexpected end of param value")
+				return "", 0, ErrUnexpectedParamValueLength
 			}
 			r = append(r, []byte(FromText(string(s[p+1:p+2])))...)
 			p++
