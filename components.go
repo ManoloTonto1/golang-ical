@@ -11,11 +11,23 @@ import (
 	"time"
 )
 
+// Component To determine what this is please use a type switch or typecast to each of:
+// - *VEvent
+// - *VTodo
+// - *VBusy
+// - *VJournal
 type Component interface {
 	UnknownPropertiesIANAProperties() []IANAProperty
 	SubComponents() []Component
-	serialize(b io.Writer)
+	SerializeTo(b io.Writer)
 }
+
+var (
+	_ Component = (*VEvent)(nil)
+	_ Component = (*VTodo)(nil)
+	_ Component = (*VBusy)(nil)
+	_ Component = (*VJournal)(nil)
+)
 
 type ComponentBase struct {
 	Properties []IANAProperty
@@ -36,7 +48,7 @@ func (cb ComponentBase) serializeThis(writer io.Writer, componentType string) {
 		p.serialize(writer)
 	}
 	for _, c := range cb.Components {
-		c.serialize(writer)
+		c.SerializeTo(writer)
 	}
 	_, _ = fmt.Fprint(writer, "END:"+componentType, "\r\n")
 }
@@ -86,6 +98,18 @@ func (cb *ComponentBase) AddProperty(property ComponentProperty, value string, p
 		r.ICalParameters[k] = v
 	}
 	cb.Properties = append(cb.Properties, r)
+}
+
+// RemoveProperty removes from the component all properties that has
+// the name passed in removeProp.
+func (cb *ComponentBase) RemoveProperty(removeProp ComponentProperty) {
+	var keptProperties []IANAProperty
+	for i := range cb.Properties {
+		if cb.Properties[i].IANAToken != string(removeProp) {
+			keptProperties = append(keptProperties, cb.Properties[i])
+		}
+	}
+	cb.Properties = keptProperties
 }
 
 const (
@@ -152,7 +176,7 @@ func (event *VEvent) SetDuration(d time.Duration) error {
 func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllDay bool) (time.Time, error) {
 	timeProp := event.GetProperty(componentProperty)
 	if timeProp == nil {
-		return time.Time{}, ErrPropertyNotFound
+		return time.Time{}, fmt.Errorf("%w: %s", ErrorPropertyNotFound, componentProperty)
 	}
 
 	timeVal := timeProp.BaseProperty.Value
@@ -405,13 +429,13 @@ type VEvent struct {
 	ComponentBase
 }
 
-func (c *VEvent) serialize(w io.Writer) {
-	c.ComponentBase.serializeThis(w, "VEVENT")
+func (event *VEvent) SerializeTo(w io.Writer) {
+	event.ComponentBase.serializeThis(w, "VEVENT")
 }
 
-func (c *VEvent) Serialize() string {
+func (event *VEvent) Serialize() string {
 	b := &bytes.Buffer{}
-	c.ComponentBase.serializeThis(b, "VEVENT")
+	event.ComponentBase.serializeThis(b, "VEVENT")
 	return b.String()
 }
 
@@ -514,7 +538,7 @@ type VTodo struct {
 	ComponentBase
 }
 
-func (todo *VTodo) serialize(w io.Writer) {
+func (todo *VTodo) SerializeTo(w io.Writer) {
 	todo.ComponentBase.serializeThis(w, "VTODO")
 }
 
@@ -610,7 +634,7 @@ type VJournal struct {
 	ComponentBase
 }
 
-func (c *VJournal) serialize(w io.Writer) {
+func (c *VJournal) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, "VJOURNAL")
 }
 
@@ -658,7 +682,7 @@ func (c *VBusy) Serialize() string {
 	return b.String()
 }
 
-func (c *VBusy) serialize(w io.Writer) {
+func (c *VBusy) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, "VFREEBUSY")
 }
 
@@ -700,7 +724,7 @@ func (c *VTimezone) Serialize() string {
 	return b.String()
 }
 
-func (c *VTimezone) serialize(w io.Writer) {
+func (c *VTimezone) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, "VTIMEZONE")
 }
 
@@ -746,7 +770,7 @@ func (c *VAlarm) Serialize() string {
 	return b.String()
 }
 
-func (c *VAlarm) serialize(w io.Writer) {
+func (c *VAlarm) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, "VALARM")
 }
 
@@ -788,7 +812,7 @@ func (c *Standard) Serialize() string {
 	return b.String()
 }
 
-func (c *Standard) serialize(w io.Writer) {
+func (c *Standard) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, "STANDARD")
 }
 
@@ -802,7 +826,7 @@ func (c *Daylight) Serialize() string {
 	return b.String()
 }
 
-func (c *Daylight) serialize(w io.Writer) {
+func (c *Daylight) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, "DAYLIGHT")
 }
 
@@ -817,7 +841,7 @@ func (c *GeneralComponent) Serialize() string {
 	return b.String()
 }
 
-func (c *GeneralComponent) serialize(w io.Writer) {
+func (c *GeneralComponent) SerializeTo(w io.Writer) {
 	c.ComponentBase.serializeThis(w, c.Token)
 }
 
