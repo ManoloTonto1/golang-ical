@@ -183,7 +183,7 @@ func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllD
 	timeVal := timeProp.BaseProperty.Value
 	matched := timeStampVariations.FindStringSubmatch(timeVal)
 	if matched == nil {
-		return time.Time{}, fmt.Errorf("%s, got '%s'", ErrTimeValueNotMatched, timeVal)
+		return time.Time{}, fmt.Errorf("%w, got '%s'", ErrTimeValueNotMatched, timeVal)
 	}
 	tOrZGrp := matched[2]
 	zGrp := matched[4]
@@ -217,7 +217,7 @@ func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllD
 			}
 		}
 
-		return time.Time{}, fmt.Errorf("%s, got '%s'", ErrTimeValueMatchedButUnsupportedAllDayTimeStamp, timeVal)
+		return time.Time{}, fmt.Errorf("%w, got '%s'", ErrTimeValueMatchedButUnsupportedAllDayTimeStamp, timeVal)
 	}
 
 	if grp1len > 0 && grp3len > 0 && tOrZGrp == "T" && zGrp == "Z" {
@@ -238,7 +238,7 @@ func (event *VEvent) getTimeProp(componentProperty ComponentProperty, expectAllD
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("%s, got '%s'", ErrTimeValueMatchedButNotSupported, timeVal)
+	return time.Time{}, fmt.Errorf("%w, got '%s'", ErrTimeValueMatchedButNotSupported, timeVal)
 }
 
 func (cb *VEvent) GetStartAt() (time.Time, error) {
@@ -991,7 +991,7 @@ func ParseComponent(cs *CalendarStream, startLine *BaseProperty) (ComponentBase,
 		}
 		line, err := ParseProperty(*l)
 		if err != nil {
-			return cb, fmt.Errorf("%s %d: %w", ErrParsingComponentProperty, ln, err)
+			return cb, fmt.Errorf("%w %d: %w", ErrParsingComponentProperty, ln, err)
 		}
 		if line == nil {
 			return cb, ErrParsingComponentLine

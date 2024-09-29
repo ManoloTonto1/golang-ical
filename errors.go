@@ -15,6 +15,8 @@ var (
 	ErrMalformedCalendarExpectedEnd        = fmt.Errorf("%w: expected a end", ErrMalformedCalendar)
 	ErrMalformedCalendarExpectedBeginOrEnd = fmt.Errorf("%w: expected begin or end", ErrMalformedCalendar)
 
+	ErrMissingPropertyParamOperator               = fmt.Errorf("%w: missing property param operator", ErrMalformedCalendar)
+	ErrUnexpectedEndOfProperty                    = fmt.Errorf("%w: unexpected end of property", ErrMalformedCalendar)
 	ErrMalformedCalendarUnexpectedEnd             = fmt.Errorf("%w: unexpected end", ErrMalformedCalendar)
 	ErrMalformedCalendarBadState                  = fmt.Errorf("%w: bad state", ErrMalformedCalendar)
 	ErrMalformedCalendarVCalendarNotWhereExpected = fmt.Errorf("%w: vcalendar not where expected", ErrMalformedCalendar)
